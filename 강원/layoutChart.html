@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title> canvas 배치도 </title>
+	<style>
+		
+	</style>
+</head>
+<body>
+	<div id="save-layout"></div>
+	<canvas id="layout-edit"></canvas>
+	<div id="layout-list">
+		<div></div>
+		<div></div>
+		<div></div>
+		<div></div>
+	</div>
+
+	<script>
+		// const $ = ele => document.createElement(ele).bind();
+		const xhr = new XMLHttpRequest();
+		xhr.onreadystatechange = function () {
+			if (xhr.readyState === xhr.DONE) {
+				if (xhr.status === 200 || xhr.status === 201) {
+					console.log(JSON.parse(xhr.responseText))
+				} else {
+					console.error(xhr.responseText);
+				}
+			}
+		}
+		xhr.open('POST', 'plan.json', true);
+		xhr.send();
+	</script>
+</body>
+</html>
