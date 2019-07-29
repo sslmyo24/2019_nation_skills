@@ -4,12 +4,20 @@
 	<meta charset="UTF-8">
 	<title> canvas 배치도 </title>
 	<style>
-		
+		* {margin: 0; padding: 0;}
+		#canvas-wrap {position: relative; margin: 30px; width: 1600px;}
+		#canvas-wrap > div {display: flex; justify-content: space-between; font-size: 11px;}
+		#x-line {position: absolute; top: -30px; width: 100%; line-height: 30px}
+		#y-line {position: absolute; left: -30px; flex-flow: column; height: 800px; width: 30px; text-align: center;}
 	</style>
 </head>
 <body>
 	<div id="save-layout"></div>
-	<canvas id="layout-edit"></canvas>
+	<div id="canvas-wrap">
+		<div id="x-line"></div>
+		<div id="y-line"></div>
+		<canvas id="layout-edit" style="border: 1px solid #000;" width="1600" height="800"></canvas>
+	</div>
 	<div id="layout-list">
 		<div></div>
 		<div></div>
@@ -18,19 +26,40 @@
 	</div>
 
 	<script>
-		// const $ = ele => document.createElement(ele).bind();
-		const xhr = new XMLHttpRequest();
-		xhr.onreadystatechange = function () {
-			if (xhr.readyState === xhr.DONE) {
-				if (xhr.status === 200 || xhr.status === 201) {
-					console.log(JSON.parse(xhr.responseText))
-				} else {
-					console.error(xhr.responseText);
-				}
-			}
+		const xLine = document.getElementById('x-line');
+		const yLine = document.getElementById('y-line');
+		for (let i = 1; i <= 80; i++) {
+			xLine.innerHTML += `<div>${i}</div>`;
+			if (i <= 40) yLine.innerHTML += `<div>${i}</div>`;
 		}
-		xhr.open('POST', 'plan.json', true);
-		xhr.send();
+
+		const canvas = document.getElementById('layout-edit');
+		const c = canvas.getContext('2d');
+
+		c.lineWidth = 1;
+		c.strokeStyle = 'black';
+		for (let i = 20; i < 1600; i = i = i + 20) {
+			c.moveTo(i,0);
+			c.lineTo(i,800);
+		}
+		for (let i = 20; i < 800; i = i + 20) {
+			c.moveTo(0, i);
+			c.lineTo(1600, i);
+		}
+		c.stroke();
+
+
+
+		fetch('./plan.json').then(res => {
+			if (res.status !== 200) {
+				console.log(res.status)
+				return;
+			}
+
+			res.json().then(data => {
+				console.log(data.road1);
+			})
+		})
 	</script>
 </body>
 </html>
