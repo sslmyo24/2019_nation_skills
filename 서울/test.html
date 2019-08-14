@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+</head>
+<body>
+  <canvas width="1440" height="100" style="border:1px solid #000;"></canvas>
+  <script>
+    const one = (ele, parent = document) => parent.querySelector(ele)
+    const all = (ele, parent = document) => parent.querySelectorAll(ele)
+    const ac = new AudioContext()
+    const cvs = one('canvas')
+    const ctx = cvs.getContext('2d')
+
+    const getPeaks = buffer => {
+      const rate = 2 ** 11
+      const size = ~~(buffer.length / rate)
+      const peaks = []
+      const data = buffer.getChannelData(0);
+      for (let j = 0; j < rate; j++) {
+        const start = j * size, end = start + size;
+        let min = data[0], max = data[0];
+        for (let k = start; k < end; k++) {
+          const v = data[k];
+          min = Math.min(min, v), max = Math.max(max, v)
+        }
+        peaks.push(max, min)
+      }
+      return peaks
+    }
+    window.onload = async () => {
+      const arrayBuffer = await fetch('./togo_1.mp4').then(res => res.arrayBuffer())
+      const peaks = await new Promise(resolve => {
+        ac.decodeAudioData(arrayBuffer, buffer => resolve(getPeaks(buffer)))
+      })
+      const len = peaks.length
+      ctx.scale((cvs.width / len * 2), 1), ctx.lineWidth = 1, ctx.beginPath()
+      for(let i = 0; i < len; i++) {
+        const y = 50 - (peaks.shift() * 30), x = i/2
+        i%2 === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+        ctx.stroke()
+      }
+    }
+  </script>
+</body>
+</html>
