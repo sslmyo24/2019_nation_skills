@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title> Busan Film </title>
+
+	<style type="text/css">
+		* {margin: 0; padding: 0;}
+		ul, li {list-style: none;}
+
+		#gnb {width: 300px; margin: 50px auto;}
+		#gnb > ul {width: 100%; display: flex; justify-content: space-between;}
+		#gnb li {cursor: pointer; font-size: 17px;}
+		#gnb li.chk {color: #09f; font-weight: bolder;}
+		section {width: 1000px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: center;}
+		section > h1 {text-align: center; padding-top: 30px; width: 100%; margin-bottom: 30px;}
+		#graph {margin-left: -170px;}
+		#video {max-width: 800px;}
+	</style>
+</head>
+<body>
+	<nav id="gnb">
+		<ul>
+			<li data-target="detail">상세정보</li>
+			<li data-target="anal" class="chk">분석</li>
+			<li data-target="edit">편집기</li>
+			<li data-target="comment">댓글</li>
+		</ul>
+	</nav>
+
+	<section id="detail" style="display: none;">
+		<h1>상세정보</h1>
+		<fieldset>
+			<legend>예고편 업로드</legend>
+			<form method="post">
+				<div><input type="text" name="title" placeholder="제목"></div>
+				<div><textarea name="dec" placeholder="설명"></textarea></div>
+				<div><span>다운로드 허용</span><input type="checkbox" name="allow"></div>
+			</form>
+		</fieldset>
+	</section>
+	<section id="anal" style="display: block;">
+		<h1>분석</h1>
+		<canvas id="graph" width="1270" height="560"></canvas>
+	</section>
+	<section id="edit" style="display: none;">
+		<h1>편집기</h1>
+		<video id="video" src="toho_1.mp4"></video>
+		<div id="preview"></div>
+		<div><span>시작</span><input type="text"><span>끝</span><input type="text"><span>자막</span><input type="text"></div>
+	</section>
+	<section id="comment" style="display: none;">
+		<h1>댓글</h1>
+		<ul></ul>
+	</section>
+
+	<script>
+
+		// 메뉴
+		const showMenu = function () {
+			const back = document.querySelector('#gnb li.chk').dataset.target
+			document.querySelector('#gnb li.chk').classList.remove('chk')
+			this.classList.add('chk')
+			const target = this.dataset.target
+			document.querySelector(`#${back}`).style.display = 'none'
+			document.querySelector(`#${target}`).style.display = 'block'
+		}
+		
+		for (const i of [0,1,2,3]) document.querySelector("#gnb ul").children[i].addEventListener('click', showMenu)
+
+		const numberFormat = n => new Intl.NumberFormat().format(n)
+
+		// 분석
+		class Graph {
+			constructor () {
+				const graph = document.getElementById("graph")
+				this.g = graph.getContext('2d')
+				this.xStart = 70
+				this.hStart = 10
+				this.hEnd = 510
+				this.width = graph.width
+				this.height = graph.height - 50
+				this.g.font = "bold 13px 맑은 고딕"
+				this.setLine()
+				this.readData()
+			}
+
+			setLine () {
+				const g = this.g
+				const w = this.width
+				const h = this.height
+				const xs = this.xStart
+				const hs = this.hStart
+
+				// 보조선
+				g.beginPath()
+				for (const i of [0,1,2,3,4]) {
+					const n = numberFormat((5-i)*1000000), hl = h/5*i + hs
+					g.fillText(n, 0, hl)
+					g.moveTo(xs, hl)
+					g.lineTo(w, hl)
+				}
+				g.lineWidth = 3
+				g.strokeStyle = '#ddd'
+				g.stroke()
+				g.closePath()
+
+				// x축, y축
+				g.beginPath()
+				g.moveTo(xs,hs)
+				g.lineTo(xs,h)
+				g.moveTo(xs,h)
+				g.lineTo(w,h)
+				g.lineWidth = 3
+				g.strokeStyle = '#222'
+				g.stroke()
+				g.closePath()
+			}
+
+			readData () {
+				fetch('data.json').then(res => res.json()).then(json => {
+					let arr = {};
+					const viewDatas = json.view_history.slice().sort((a,b) => b.date - a.date)
+					for (const v of viewDatas) {
+						const date = new Date(v.date)
+						const k = `${date.getFullYear()}${date.getMonth()+1 < 10 ? "0"+(date.getMonth()+1) : date.getMonth()+1}`
+						arr[k] = arr[k] ? arr[k] + v.increase : v.increase
+						if (Object.keys(arr).length > 12) {
+							delete arr[k]
+							break
+						}
+					}
+					const g = this.g
+					const gs = this.xStart + 50
+					const he = this.hEnd
+					let i = 0
+					g.strokeStyle = "#09f"
+					g.lineWidth = 3
+					g.textAlign = "center"
+					g.textBaseline = "middle"
+					for (const k in arr) {
+						const num = (~~(arr[k]/10000))
+						if (i > 0) {
+							g.lineTo(gs+i, he - num)
+							g.stroke()
+							g.closePath()
+						}
+						g.beginPath()
+						g.fillStyle = "#000"
+						g.fillText(`${k.substring(0,4)}년 ${k[4] == '0' ? k.substring(5) : k.substring(4)}월`, gs+i, he + 30)
+						g.fillStyle = "#09f"
+						g.arc(gs+i, he - num, 5, 0, 2 * Math.PI)
+						g.fill()
+						g.moveTo(gs+i, he - num)
+						i += 100
+					}
+					g.closePath()
+				})
+			}
+		}
+
+		// document.querySelector('#gnb li:nth-child(2)').addEventListener('click', _ => new Graph())
+		new Graph()
+
+		// const loadOn = _ => {
+			
+		// }
+
+		// document.addEventListener('DOMContentLoaded', function () {
+		// 	document.removeEventListener('DOMContentLoaded', arguments.callee, false)
+		// 	loadOn()
+		// })
+
+	</script>
+</body>
+</html>
